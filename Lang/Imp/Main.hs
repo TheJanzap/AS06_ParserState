@@ -1,16 +1,24 @@
 module Main where
 
-import Data.List (intercalate)
 import qualified Data.Map.Strict as M
 import Lang.Imp.Ast
 import Lang.Imp.Interpreter
 import Lang.Imp.Parser
+import Lang.Imp.Pretty
 import System.Environment (getArgs)
+
+data Mode = Run | Pretty
 
 main :: IO ()
 main = do
-  (fileName, state) <- parseArgs
+  (fileName, mode, state) <- parseArgs
   content <- readFile fileName
+  case mode of 
+    Run    -> run content state
+    Pretty -> pretty content
+
+run :: String -> State -> IO ()
+run content state = do
   putStrLn "Input State:"
   printState state
   case executeProgram content state of
@@ -18,15 +26,22 @@ main = do
     Right finalState -> do
       putStrLn "Result State:"
       printState finalState
+
+pretty :: String -> IO ()
+pretty content = do
+  case parseImp content of
+    Left err  -> error err
+    Right cmd -> putStrLn (ppCmd cmd)
   
 -- Parses the program's arguments and returns the file name and the initial state
-parseArgs :: IO (String, State)
+parseArgs :: IO (String, Mode, State)
 parseArgs = do
   args <- getArgs
   case args of
     [] -> error "Expected a file name"
+    ["--pretty", filename] -> return (filename, Pretty, emptyState)
     (filename : vars) -> case mapM parseVar vars of
-      Just vs -> return (filename, M.fromList vs)
+      Just vs -> return (filename, Run, M.fromList vs)
       Nothing -> error "Expected variables in key=value format"
 
 -- Parses a key-value variable pair in the form of `variable=1`
