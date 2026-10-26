@@ -11,7 +11,8 @@ data Mode = Run | Pretty
 
 main :: IO ()
 main = do
-  (fileName, mode, state) <- parseArgs
+  args <- getArgs
+  let (fileName, mode, state) = parseArgs args
   content <- readFile fileName
   case mode of 
     Run    -> run content state
@@ -34,14 +35,13 @@ pretty content = do
     Right cmd -> putStrLn (ppCmd cmd)
   
 -- Parses the program's arguments and returns the file name and the initial state
-parseArgs :: IO (String, Mode, State)
-parseArgs = do
-  args <- getArgs
+parseArgs :: [String] -> (String, Mode, State)
+parseArgs args = do
   case args of
     [] -> error "Expected a file name"
-    ["--pretty", filename] -> return (filename, Pretty, emptyState)
+    ["--pretty", filename] -> (filename, Pretty, emptyState)
     (filename : vars) -> case mapM parseVar vars of
-      Just vs -> return (filename, Run, M.fromList vs)
+      Just vs -> (filename, Run, M.fromList vs)
       Nothing -> error "Expected variables in key=value format"
 
 -- Parses a key-value variable pair in the form of `variable=1`

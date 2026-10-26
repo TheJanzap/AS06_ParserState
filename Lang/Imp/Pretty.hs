@@ -26,7 +26,7 @@ ppExpr e = case e of
     REq a b -> expr "=" a b
     RLt a b -> expr "<" a b
     where
-        expr op a b = "(" ++ ppExpr a ++ " " ++ op ++ " " ++ ppExpr b ++ ")" 
+        expr op a b = concat ["(", ppExpr a, " ", op, " ", ppExpr b, ")"]
 
 -- | Pretty print a command
 ppCmd :: Cmd -> String
@@ -38,13 +38,13 @@ ppCmdAt n cmd =
         nestedCmd = ppCmdAt (n + 1)
     in case cmd of 
         CSkip               -> indent ++ "skip"
-        CAssign name expr   -> indent ++ name ++ " := " ++ ppExpr expr
+        CAssign name expr   -> concat [indent, name, " := ", ppExpr expr]
         CSeq cmds           -> intercalate ";\n" (map (ppCmdAt n) cmds)
-        CIfThEl cond th el  -> indent ++ "if " ++ ppExpr cond ++ " then\n"
-                                ++ nestedCmd th ++ "\n"
-                                ++ indent ++ "else\n"
-                                ++ nestedCmd el ++ "\n"
-                                ++ indent ++ "endif"
-        CWhile cond body    -> indent ++ "while " ++ ppExpr cond ++ " do\n"
-                                ++ nestedCmd body ++ "\n"
-                                ++ indent ++ "endwhile"
+        CIfThEl cond th el  -> concat [indent, "if ", ppExpr cond, " then\n"
+                               , nestedCmd th, "\n"
+                               , indent, "else\n"
+                               , nestedCmd el, "\n"
+                               , indent, "endif"]
+        CWhile cond body    -> concat [indent, "while ", ppExpr cond, " do\n"
+                               , nestedCmd body, "\n"
+                               , indent, "endwhile"]

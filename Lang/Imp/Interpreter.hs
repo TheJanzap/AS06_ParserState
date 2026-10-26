@@ -137,7 +137,7 @@ exec :: Cmd -> ImpCmd ()
 exec CSkip = pure ()
 exec (CAssign n v) = do
   -- Evaluate the variable to get an ImpExpr, then lift it to an ImpCmd
-  -- The <- then lifts the value out of ImpCmd
+  -- The <- passes in a function that handles the result
   var <- liftReader (eval v)
   assignVariable n var
 exec (CIfThEl b t e) = do
