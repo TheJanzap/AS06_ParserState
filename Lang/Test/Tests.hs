@@ -118,7 +118,29 @@ parseSpec = describe "Parser'" $ do
      parseImp "x := 5" `shouldBe` Right (CSeq [CAssign "x" (AConst 5)])
    it "parseImp \"x := 5; y := 6\" == Right (CSeq [CAssign \"x\" (AConst 5), CAssign \"y\" (AConst 6)])" $
       parseImp "x := 5; y := 6" `shouldBe` Right (CSeq [CAssign "x" (AConst 5), CAssign "y" (AConst 6)])
-
+   it "parseImp \"x := 0; if (x = 0) then x := 1 else skip endif\"" $
+      parseImp "x := 0; if (x = 0) then x := 1 else skip endif" `shouldBe`
+      Right (CSeq [CAssign "x" (AConst 0), CIfThEl (REq (AVar "x") (AConst 0)) (CSeq [CAssign "x" (AConst 1)]) (CSeq [CSkip])])
+   it "parseImp \"x := 0; while (x < 5) do x := (x + 1) endwhile\"" $
+      parseImp "x := 0; while (x < 5) do x := (x + 1) endwhile" `shouldBe`
+      Right (CSeq [CAssign "x" (AConst 0), CWhile (RLt (AVar "x") (AConst 5)) (CSeq [CAssign "x" (APlus (AVar "x") (AConst 1))])])
+   it "parseImp \"q := 0; r := m; while (n <= r) do q := (q + 1); r := (r - n) endwhile\"" $
+      parseImp "q := 0; r := m; while (n <= r) do q := (q + 1); r := (r - n) endwhile" `shouldBe`
+      Right (CSeq [CAssign "q" (AConst 0),CAssign "r" (AVar "m"),CWhile (BOr (RLt (AVar "n") (AVar "r")) (REq (AVar "n") (AVar "r"))) (CSeq [CAssign "q" (APlus (AVar "q") (AConst 1)),CAssign "r" (AMinus (AVar "r") (AVar "n"))])])
+   
+   it "1 < 2 == RLt (AConst 1) (AConst 2)" $
+      parseImp "while (1 < 2) do skip endwhile" `shouldBe`
+      Right (CSeq [CWhile (RLt (AConst 1) (AConst 2)) (CSeq [CSkip])])
+   it "1 = 2 == REq (AConst 1) (AConst 2)" $
+      parseImp "while (1 = 2) do skip endwhile" `shouldBe`
+      Right (CSeq [CWhile (REq (AConst 1) (AConst 2)) (CSeq [CSkip])])
+   it "1 <= 2 == a < b || a = b" $
+      parseImp "while (1 <= 2) do skip endwhile" `shouldBe`
+      Right (CSeq [CWhile (BOr (RLt (AConst 1) (AConst 2)) (REq (AConst 1) (AConst 2))) (CSeq [CSkip])])
+   it "1 > 2 == not (a < b || a = b)" $
+      parseImp "while (1 > 2) do skip endwhile" `shouldBe`
+      Right (CSeq [CWhile (BNot (BOr (RLt (AConst 1) (AConst 2)) (REq (AConst 1) (AConst 2)))) (CSeq [CSkip])])
+   
 
 main :: IO ()
 main = hspec $ do
